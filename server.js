@@ -60,10 +60,9 @@ app.post('/SignUp', async (req, res) => {
     }
 });
 
-// Get Users Route
 app.get('/users', async (req, res) => {
     try {
-        const usersCollection = db.collection('users'); // Collection name
+        const usersCollection = db.collection('users'); 
         const users = await usersCollection.find({}).toArray();
         res.json(users);
     } catch (error) {
@@ -72,7 +71,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Server Listening
+
 const port = process.env.PORT || 3000;
 app.listen(port, '0.0.0.0', () => {
     console.log("Server running on port test 2222 ${port}");

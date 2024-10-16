@@ -74,5 +74,5 @@ app.get('/users', async (req, res) => {
 // Server Listening
 const port = process.env.PORT || 3000;
 app.listen(port, '0.0.0.0', () => {
-    console.log("Server running on port ${port}");
+    console.log("Server running on port test 2222 ${port}");
 });

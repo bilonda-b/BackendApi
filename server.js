@@ -1,141 +1,78 @@
-require("dotenv").config();
 const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
-
 const app = express();
-const PORT = process.env.PORT || 3001;
+const bcrypt = require('bcrypt');
+const { MongoClient } = require('mongodb');
 
-app.use(cors());
-app.use(bodyParser.json());
+// Middleware
+app.use(express.json());
+const cors = require('cors');
+app.use(cors()); // Allow cross-origin requests
 
-const mongoURI = 'mongodb+srv://bilondabelieve283:prettyblackgirl02@cluster0.4l9sse8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-mongoose.connect(mongoURI, {
-  useUnifiedTopology: true,
-})
+// MongoDB connection
+let db;
+const uri = 'mongodb+srv://bilondabelieve283:prettyblackgirl02@cluster0.4l9sse8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // Replace with your MongoDB URI
+MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(client => {
+        db = client.db('AnThro'); // Replace with your database name
+        console.log("Connected to MongoDB");
+    })
+    .catch(error => console.error(error));
 
-.then(() => {
-  console.log('MongoDB connected successfully');
-})
-.catch((err) => {
-  console.error('MongoDB connection error:', err);
-});
-
-
+// Sign Up Route
 app.post('/SignUp', async (req, res) => {
-  try {
-      const user = req.body;
+    try {
+        const user = req.body;
 
-      if (!user.password || user.password.length < 6) throw new Error("Password too short");
-      if (!user.email || !user.email.includes("@")) throw new Error("Invalid email format");
+        // Validation
+        if (!user.password || user.password.length < 6) {
+            return res.status(400).json({ message: "Password too short" });
+        }
+        if (!user.email || !user.email.includes("@")) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
 
-      const collection = db.collection('users');
-      const existingUser = await collection.findOne({ email: user.email });
-      if (existingUser) throw new Error("Email already exists");
+        const collection = db.collection('users');
 
-      const result = await collection.insertOne({
-          ...user,
-          createdAt: new Date(),
-      });
+        // Check if user already exists
+        const existingUser = await collection.findOne({ email: user.email });
+        if (existingUser) {
+            return res.status(409).json({ message: "Email already exists" });
+        }
 
-      res.status(201).json({
-          message: "User created successfully",
-          userId: result.insertedId,
-}); 
-  } catch (error) {
-      console.error("Error inserting user: ", error);
-      res.status(500).json({ message: error.message || "Internal Server Error" });
-  }
+        // Hash password
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+
+        // Insert user
+        const result = await collection.insertOne({
+            ...user,
+            password: hashedPassword, // Store hashed password
+            createdAt: new Date(),
+        });
+
+        res.status(201).json({
+            message: "User created successfully",
+            userId: result.insertedId,
+        });
+    } catch (error) {
+        console.error("Error inserting user: ", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 });
 
-app.post('/Signin', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-
-    if (!email || !password) throw new Error("Email and password are required");
-
-    const collection = db.collection('users');
-    const user = await collection.findOne({ email: email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+// Get Users Route
+app.get('/users', async (req, res) => {
+    try {
+        const usersCollection = db.collection('users'); // Collection name
+        const users = await usersCollection.find({}).toArray();
+        res.json(users);
+    } catch (error) {
+        console.error("Error retrieving users: ", error);
+        res.status(500).send('Error retrieving users');
     }
-
-    const match = await bcrypt.compare(password, user.password);
-
-    if (!match) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    res.status(200).json({ message: "Login successful", userId: user._id });
-
-  } catch (error) {
-    console.error("Error during login: ", error);
-    res.status(500).json({ message: error.message || "Internal Server Error" });
-  }
 });
 
-app.put('/ChangePassword/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { oldPassword, newPassword } = req.body;
-
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ message: "New password must be at least 6 characters long" });
-    }
-
-    const collection = db.collection('users');
-    const user = await collection.findOne({ _id: new mongoose.Types.ObjectId(userId) });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const match = await bcrypt.compare(oldPassword, user.password);
-    if (!match) {
-      return res.status(401).json({ message: "Old password is incorrect" });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-    await collection.updateOne(
-      { _id: new mongoose.Types.ObjectId(userId) },
-      { $set: { password: hashedPassword } }
-    );
-
-    res.status(200).json({ message: "Password changed successfully" });
-
-  } catch (error) {
-    console.error("Error changing password: ", error);
-    res.status(500).json({ message: error.message || "Internal Server Error" });
-  }
-});
-
-
-app.delete('/DeleteUser/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const collection = db.collection('users');
-    const result = await collection.deleteOne({ _id: new mongoose.Types.ObjectId(userId) });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json({ message: "User deleted successfully" });
-
-  } catch (error) {
-    console.error("Error deleting user: ", error); 
-    res.status(500).json({ message: error.message || "Internal Server Error" });
-  }
-});
-
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-
+// Server Listening
+const port = process.env.PORT || 3000;
+app.listen(port, '0.0.0.0', () => {
+    console.log("Server running on port ${port}");
 });

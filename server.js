@@ -4,27 +4,23 @@ const app = express();
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 
-// Middleware
 app.use(express.json());
 const cors = require('cors');
-app.use(cors()); // Allow cross-origin requests
+app.use(cors()); 
 
-// MongoDB connection
 let db;
 const uri = 'mongodb+srv://bilondabelieve283:prettyblackgirl02@cluster0.4l9sse8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // Replace with your MongoDB URI
 MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(client => {
-        db = client.db('AnThro'); // Replace with your database name
+        db = client.db('AnThro'); 
         console.log("Connected to MongoDB");
     })
     .catch(error => console.error(error));
 
-// Sign Up Route
 app.post('/SignUp', async (req, res) => {
     try {
         const user = req.body;
 
-        // Validation
         if (!user.password || user.password.length < 6) {
             return res.status(400).json({ message: "Password too short" });
         }
@@ -34,19 +30,16 @@ app.post('/SignUp', async (req, res) => {
 
         const collection = db.collection('users');
 
-        // Check if user already exists
         const existingUser = await collection.findOne({ email: user.email });
         if (existingUser) {
             return res.status(409).json({ message: "Email already exists" });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(user.password, 10);
 
-        // Insert user
         const result = await collection.insertOne({
             ...user,
-            password: hashedPassword, // Store hashed password
+            password: hashedPassword, 
             createdAt: new Date(),
         });
 
@@ -70,6 +63,56 @@ app.get('/users', async (req, res) => {
         res.status(500).send('Error retrieving users');
     }
 });
+
+app.delete('/DeleteAccount/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+  
+      const collection = db.collection('users');
+      const result = await collection.deleteOne({ _id: new mongoose.Types.ObjectId(userId) });
+  
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      res.status(200).json({ message: "Account deleted successfully" });
+  
+    } catch (error) {
+      console.error("Error deleting user account: ", error);
+      res.status(500).json({ message: error.message || "Internal Server Error" });
+    }
+  });
+
+  app.post('/Login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+  
+      
+      if (!email || !password) throw new Error("Email and password are required");
+  
+      const collection = db.collection('users');
+      const user = await collection.findOne({ email: email });
+  
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      
+      const match = await bcrypt.compare(password, user.password);
+  
+      if (!match) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+  
+      res.status(200).json({ message: "Login successful", userId: user._id });
+  
+    } catch (error) {
+      console.error("Error during login: ", error);
+      res.status(500).json({ message: error.message || "Internal Server Error" });
+    }
+  });
+  
+  
 
 
 const port = process.env.PORT || 3000;

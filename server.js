@@ -11,6 +11,7 @@ app.use(cors());
 let db;
 const uri = 'mongodb+srv://bilondabelieve283:prettyblackgirl02@cluster0.4l9sse8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // Replace with your MongoDB URI
 MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+
     .then(client => {
         db = client.db('AnThro'); 
         console.log("Connected to MongoDB");
@@ -83,15 +84,15 @@ app.delete('/DeleteAccount/:userId', async (req, res) => {
     }
   });
 
-  app.post('/Login', async (req, res) => {
+  app.post('/Signin', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { username, password } = req.body;
   
       
-      if (!email || !password) throw new Error("Email and password are required");
+      if (!username || !password) throw new Error("Email and password are required");
   
       const collection = db.collection('users');
-      const user = await collection.findOne({ email: email });
+      const user = await collection.findOne({ name: user });
   
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -112,10 +113,7 @@ app.delete('/DeleteAccount/:userId', async (req, res) => {
     }
   });
   
-  
-
-
 const port = process.env.PORT || 3000;
 app.listen(port, '0.0.0.0', () => {
-    console.log("Server running on port test 2222 ${port}");
+    console.log("Server started on http://localhost:${port}");
 });

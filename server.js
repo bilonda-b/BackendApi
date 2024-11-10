@@ -76,8 +76,8 @@ app.get('/users', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 3001;
-app.listen(port, () => {
+const port = process.env.PORT || 3000;
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server started on http://54.144.43.43:${port}`);
 });
 

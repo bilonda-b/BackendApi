@@ -8,11 +8,11 @@ chai.use(chaiHttp);
 describe("User API", () => {
 
 
-    describe("POST /Signup", () => {
+    describe("POST /user", () => {
         it("should create a new user", (done) => {
             const newUser = { email: "stephaniekalongo@gmail.com", password: "kalongo6985" };
             chai.request.execute(server)
-                .post('/Signup')
+                .post('/user')
                 .send(newUser)
                 .end((err, res) => {
                     expect(res).to.have.status(201);
@@ -37,19 +37,27 @@ describe("User API", () => {
     // });
 
     
-    // describe("POST /Signin", () => {
-    //     it("should login the user with valid credentials", (done) => {
-    //         const credentials = { username: "ysvanetti0@gmpg.org", password: "p4n`nFj" };
-    //         chai.request(server)
-    //             .post('/Signin')
-    //             .send(credentials)
-    //             .end((err, res) => {
-    //                 expect(res).to.have.status(200);
-    //                 expect(res.body).to.be.an('object');
-    //                 expect(res.body).to.have.property('message', 'Login successful');
-    //                 done();
-    //             });
-    //     });
-    // });
-});
+//     describe("Vehicle API", () => {
+        
+//         it('should POST a new vehicle', (done) => {
+//             const newVehicle = {
+//                 vehicle: 'Toyota',
+//                 model: 'Camry',
+//                 year: 2020,
+//                 ratings: 5, 
+//             };
+    
+//             chai.request(server)
+//                 .post('/vehicles')  
+//                 .send(newVehicle)   
+//                 .end((err, res) => {
+//                     expect(res).to.have.status(201);
+//                     expect(res.body).to.be.an('object');
+//                     expect(res.body).to.have.property('message').eql('Vehicle added successfully');
+//                     expect(res.body).to.have.property('vehicleId'); 
+//                     done();
+//                 });
+//         });
+// });
 
+});

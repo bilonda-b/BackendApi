@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
 const cors = require('cors');
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient } = require('mongodb');
 
 app.use(express.json());
 app.use(cors());
@@ -31,11 +31,11 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
       }
     });
 
-    app.post('/transaction', async (req, res) => {
+    app.post('/transactions', async (req, res) => {
       try {
         const transaction = req.body;
     
-        const collection = db.collection('transaction');
+        const collection = db.collection('transactions');
         const result = await collection.insertOne(transaction);
     
         res.status(201).json({
@@ -73,38 +73,6 @@ app.get('/users', async (req, res) => {
     } catch (error) {
         console.error("Error retrieving users: ", error);
         res.status(500).send('Error retrieving users');
-    }
-});
-
-app.delete('/DeleteAccount/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const collection = db.collection('users');
-        const result = await collection.deleteOne({ _id: new ObjectId(userId) });
-        if (result.deletedCount === 0) return res.status(404).json({ message: "User not found" });
-        res.status(200).json({ message: "Account deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting user account: ", error);
-        res.status(500).json({ message: error.message || "Internal Server Error" });
-    }
-});
-
-app.post('/Signin', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        if (!username || !password) throw new Error("Username and password are required");
-
-        const collection = db.collection('users');
-        const user = await collection.findOne({ name: username });
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.status(401).json({ message: "Invalid credentials" });
-
-        res.status(200).json({ message: "Login successful", userId: user._id });
-    } catch (error) {
-        console.error("Error during login: ", error);
-        res.status(500).json({ message: error.message || "Internal Server Error" });
     }
 });
 

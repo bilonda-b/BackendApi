@@ -19,25 +19,51 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
     .catch(error => console.error(error));
 
 
-app.post('/SignUp', async (req, res) => {
-    try {
-        const user = req.body;
-        if (!user.password || user.password.length < 6) return res.status(400).json({ message: "Password too short" });
-        if (!user.email || !user.email.includes("@")) return res.status(400).json({ message: "Invalid email format" });
-
-        const collection = db.collection('users');
-        const existingUser = await collection.findOne({ email: user.email });
-        if (existingUser) return res.status(409).json({ message: "Email already exists" });
-
-        const hashedPassword = await bcrypt.hash(user.password, 10);
-        const result = await collection.insertOne({ ...user, password: hashedPassword, createdAt: new Date() });
-
-        res.status(201).json({ message: "User created successfully", userId: result.insertedId });
-    } catch (error) {
-        console.error("Error inserting user: ", error);
+    app.get('/cart', async (req, res) => {
+      try {
+        const collection = db.collection('cart');
+        const cartItems = await collection.find({}).toArray();
+    
+        res.status(200).json(cartItems);
+      } catch (error) {
+        console.error("Error retrieving cart items:", error);
         res.status(500).json({ message: "Internal Server Error" });
-    }
-});
+      }
+    });
+
+    app.post('/transaction', async (req, res) => {
+      try {
+        const transaction = req.body;
+    
+        const collection = db.collection('transaction');
+        const result = await collection.insertOne(transaction);
+    
+        res.status(201).json({
+          message: "Transaction created successfully",
+          transactionId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error creating transaction:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
+
+    app.post('/vehicles', async (req, res) => {
+      try {
+        const vehicle = req.body;
+    
+        const collection = db.collection('vehicles');
+        const result = await collection.insertOne(vehicle);
+    
+        res.status(201).json({
+          message: "Vehicle added successfully",
+          vehicleId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error adding vehicle:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+      }
+    });
 
 app.get('/users', async (req, res) => {
     try {
